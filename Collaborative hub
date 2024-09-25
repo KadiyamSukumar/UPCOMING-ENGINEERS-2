@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Hub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #218838;
+        }
+        #error-message {
+            color: red;
+            text-align: center;
+        }
+        .idea {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        #logout-btn {
+            display: none;
+        }
+        .doubt, .clarification {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f0f8ff;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Collaborative Hub</h1>
+        <div id="auth-section">
+            <h2>Sign Up</h2>
+            <form id="signup-form">
+                <input type="email" id="signup-email" placeholder="Email" required>
+                <input type="password" id="signup-password" placeholder="Password" 
+
+required>
+                <button type="submit">Sign Up</button>
+            </form>
+            <p id="signup-error-message"></p>
+            <h2>Log In</h2>
+            <form id="login-form" style="display: none;">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" 
+
+required>
+                <button type="submit">Log In</button>
+            </form>
+            <p id="login-error-message"></p>
+            <button id="show-login-btn" style="display: none;">Already have an account? 
+
+Log In</button>
+            <button id="logout-btn">Log Out</button>
+        </div>
+        <div id="content" style="display: none;">
+            <h2>Share Your Ideas</h2>
+            <textarea id="idea-input" placeholder="Write your idea here..." 
+
+required></textarea>
+            <button id="share-btn">Share Idea</button>
+            <h3>Shared Ideas:</h3>
+            <div id="ideas-list"></div>
+            <h3>Discussions:</h3>
+            <div id="discussion-list"></div>
+        </div>
+    </div>
+    <script>
+        const signupForm = document.getElementById('signup-form');
+        const signupEmailInput = document.getElementById('signup-email');
+        const signupPasswordInput = document.getElementById('signup-password');
+        const signupErrorMessage = document.getElementById('signup-error-message');
+
+        const loginForm = document.getElementById('login-form');
+        const loginEmailInput = document.getElementById('login-email');
+        const loginPasswordInput = document.getElementById('login-password');
+        const loginErrorMessage = document.getElementById('login-error-message');
+
+        const logoutBtn = document.getElementById('logout-btn');
+        const contentSection = document.getElementById('content');
+        const authSection = document.getElementById('auth-section');
+        const ideaInput = document.getElementById('idea-input');
+        const shareBtn = document.getElementById('share-btn');
+        const ideasList = document.getElementById('ideas-list');
+        const discussionList = document.getElementById('discussion-list');
+        const showLoginBtn = document.getElementById('show-login-btn');
+
+        let users = {}; // Simulate a user database
+        let ideas = [];
+        let discussions = [];
+        let currentUser = null;
+
+        // Handle signup form submission
+        signupForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const email = signupEmailInput.value;
+            const password = signupPasswordInput.value;
+
+            if (!users[email]) {
+                // Simulate saving user to server
+                users[email] = password; 
+                signupErrorMessage.textContent = 'Signup successful! Please log in.';
+                signupEmailInput.value = '';
+                signupPasswordInput.value = '';
+                showLoginForm();
+            } else {
+                signupErrorMessage.textContent = 'Email is already registered.';
+            }
+        });
+
+        // Handle login form submission
+        loginForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const email = loginEmailInput.value;
+            const password = loginPasswordInput.value;
+
+            if (users[email] && users[email] === password) {
+                currentUser = email;
+                authSection.style.display = 'none';
+                contentSection.style.display = 'block';
+                logoutBtn.style.display = 'block';
+                loginErrorMessage.textContent = '';
+                renderIdeas();
+                renderDiscussions();
+            } else {
+                loginErrorMessage.textContent = 'Invalid email or password';
+            }
+        });
+
+        // Show login form
+        showLoginBtn.addEventListener('click', showLoginForm);
+        
+        function showLoginForm() {
+            signupForm.style.display = 'none';
+            loginForm.style.display = 'block';
+            showLoginBtn.style.display = 'none';
+        }
+
+        // Handle logout button click
+        logoutBtn.addEventListener('click', function() {
+            authSection.style.display = 'block';
+            contentSection.style.display = 'none';
+            logoutBtn.style.display = 'none';
+            currentUser = null;
+            ideaInput.value = '';
+            ideasList.innerHTML = '';
+            discussionList.innerHTML = '';
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
+            signupErrorMessage.textContent = '';
+            window.close(); // Attempt to close the window
+        });
+
+        // Handle idea sharing
+        shareBtn.addEventListener('click', function() {
+            const idea = ideaInput.value.trim();
+            if (idea) {
+                ideas.push({ user: currentUser, text: idea });
+                ideaInput.value = '';
+                renderIdeas();
+            }
+        });
+
+        // Render shared ideas
+        function renderIdeas() {
+            ideasList.innerHTML = '';
+            ideas.forEach(idea => {
+                const ideaDiv = document.createElement('div');
+                ideaDiv.classList.add('idea');
+                ideaDiv.textContent = `${idea.user}: ${idea.text}`;
+                ideasList.appendChild(ideaDiv);
+            });
+        }
+
+        // Handle discussions (doubt clarification)
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && currentUser) {
+                const question = prompt("Ask your doubt:");
+                if (question) {
+                    discussions.push({ user: currentUser, text: question });
+                    renderDiscussions();
+                    const clarification = prompt("Enter clarification:");
+                    if (clarification) {
+                        discussions.push({ user: 'Admin', text: clarification });
+                        renderDiscussions();
+                    }
+                }
+            }
+        });
+
+        // Render discussions
+        function renderDiscussions() {
+            discussionList.innerHTML = '';
+            discussions.forEach(discussion => {
+                const discussionDiv = document.createElement('div');
+                discussionDiv.classList.add(discussion.user === 'Admin' ? 'clarification' : 
+
+'doubt');
+                discussionDiv.textContent = `${discussion.user}: ${discussion.text}`;
+                discussionList.appendChild(discussionDiv);
+            });
+        }
+    </script>
+</body>
+</html>
